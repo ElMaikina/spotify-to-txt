@@ -1,0 +1,8 @@
+spotify_exports/
+__pycache__/
+.cache
+venv/
+.env/
+.envrc
+.DS_Store
+Thumbs.db
