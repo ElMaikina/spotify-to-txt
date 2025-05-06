@@ -1,4 +1,6 @@
 spotify_exports/
+albums/
+lists/
 __pycache__/
 .cache
 venv/

@@ -5,6 +5,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 📄 Load credentials
+print("Cargando las credenciales...")
 def load_credentials(path="C:/Users/ElMaikina/Documents/Credentials/spotify-to-text.txt"):
     with open(path, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f.readlines()]
@@ -16,8 +17,10 @@ def load_credentials(path="C:/Users/ElMaikina/Documents/Credentials/spotify-to-t
             "redirect_uri": lines[2],
             "scope": lines[3]
         }
+print("Credenciales cargadas!")
 
 # 🧠 Authenticate with Spotify
+print("Autentificando las credenciales...")
 creds = load_credentials()
 sp = Spotify(auth_manager=SpotifyOAuth(
     client_id=creds["client_id"],
@@ -25,11 +28,10 @@ sp = Spotify(auth_manager=SpotifyOAuth(
     redirect_uri=creds["redirect_uri"],
     scope=creds["scope"]
 ))
-
-output_dir = "spotify_exports"
-os.makedirs(output_dir, exist_ok=True)
+print("Credenciales autentificadas!")
 
 # 🧩 Mapper: fetch track list for album
+print("Cargando los Albumes...")
 def fetch_album_tracks(album_obj):
     album = album_obj['album']
     album_name = f"{album['name']} - {album['artists'][0]['name']}"
@@ -40,6 +42,7 @@ def fetch_album_tracks(album_obj):
     return album_name, tracks
 
 # 🧩 Mapper: fetch track list for playlist
+print("Cargando las PlayLists...")
 def fetch_playlist_tracks(playlist_obj):
     playlist_name = playlist_obj['name']
     tracks = []
@@ -57,14 +60,28 @@ def fetch_playlist_tracks(playlist_obj):
         offset += len(items['items'])
     return playlist_name, tracks
 
+# 📁 Create a separate folder for each type
+album_dir = "albums"
+playl_dir = "lists"
+os.makedirs(album_dir, exist_ok=True)
+os.makedirs(playl_dir, exist_ok=True)
+
 # 🧹 Reducer: write to text file
-def save_to_file(title, tracks):
+def save_album(title, tracks):
     safe_name = "".join(c for c in title if c.isalnum() or c in " -_").strip().replace(" ", "_")
-    path = os.path.join(output_dir, f"{safe_name}.txt")
+    path = os.path.join(album_dir, f"{safe_name}.txt")
     with open(path, "w", encoding="utf-8") as f:
         for line in tracks:
             f.write(line + "\n")
 
+# 🧹 Reducer: write to text file
+def save_playl(title, tracks):
+    safe_name = "".join(c for c in title if c.isalnum() or c in " -_").strip().replace(" ", "_")
+    path = os.path.join(playl_dir, f"{safe_name}.txt")
+    with open(path, "w", encoding="utf-8") as f:
+        for line in tracks:
+            f.write(line + "\n")
+                    
 # 📥 Get all saved albums
 def get_all_albums():
     albums = []
@@ -102,16 +119,20 @@ def run():
     with ThreadPoolExecutor(max_workers=8) as executor:
         # Map albums
         album_futures = {executor.submit(fetch_album_tracks, a): a for a in albums}
+        
         # Map playlists
         playlist_futures = {executor.submit(fetch_playlist_tracks, p): p for p in playlists}
-
-        # Combine futures
-        all_futures = {**album_futures, **playlist_futures}
-
+        
         # Reduce: write each result to file
-        for future in as_completed(all_futures):
+        for future in as_completed(album_futures):
             title, tracks = future.result()
-            save_to_file(title, tracks)
+            save_album(title, tracks)
+            print(f"✅ Saved: {title}")
+        
+        # Reduce: write each result to file
+        for future in as_completed(playlist_futures):
+            title, tracks = future.result()
+            save_playl(title, tracks)
             print(f"✅ Saved: {title}")
 
 if __name__ == "__main__":
