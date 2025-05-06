@@ -42,7 +42,7 @@ def fetch_album_tracks(album_obj):
     return album_name, tracks
 
 # 🧩 Mapper: fetch track list for playlist
-print("Cargando las PlayLists...")
+print("Cargando las Playlists...")
 def fetch_playlist_tracks(playlist_obj):
     playlist_name = playlist_obj['name']
     tracks = []
@@ -110,19 +110,16 @@ def get_all_playlists():
 
 # 🧠 MapReduce runner
 def run():
-    albums = get_all_albums()
     playlists = get_all_playlists()
-
-    print(f"🟢 Found {len(albums)} albums and {len(playlists)} playlists.")
-    tasks = []
-
+    albums = get_all_albums()
+    print(f"🟢 Found {len(playlists)} playlists!")
+    print(f"🟢 Found {len(albums)} albums!")
+    # 🐜 Separate each tasks as a parallel process in the queue
     with ThreadPoolExecutor(max_workers=8) as executor:
         # Map albums
         album_futures = {executor.submit(fetch_album_tracks, a): a for a in albums}
-        
         # Map playlists
         playlist_futures = {executor.submit(fetch_playlist_tracks, p): p for p in playlists}
-        
         # Reduce: write each result to file
         for future in as_completed(album_futures):
             title, tracks = future.result()
