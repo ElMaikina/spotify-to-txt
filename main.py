@@ -112,8 +112,7 @@ def get_all_playlists():
 def run():
     playlists = get_all_playlists()
     albums = get_all_albums()
-    print(f"🟢 Found {len(playlists)} playlists!")
-    print(f"🟢 Found {len(albums)} albums!")
+    print(f"🟢 Found {len(playlists)} playlists and {len(albums)} albums!")
     # 🐜 Separate each tasks as a parallel process in the queue
     with ThreadPoolExecutor(max_workers=8) as executor:
         # Map albums
